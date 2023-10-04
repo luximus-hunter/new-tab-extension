@@ -6,14 +6,19 @@
     "permissions": [
         "bookmarks",
         "activeTab",
+        "storage",
         "https://t0.gstatic.com/*"
     ],
     "chrome_url_overrides" : {
         "newtab": "index.html"
     },
-    "browser_action": {  
-        "default_icon": "tab-icon.png",   
-        "default_title": "Have a good day" 
+    "options_ui": {
+        "page": "settings.html"
     },
-    "content_security_policy": "script-src 'self' https://t0.gstatic.com; object-src 'self'"
-  }
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "newtab@luximus.eu",
+            "strict_min_version": "42.0"
+        }
+    } 
+}
