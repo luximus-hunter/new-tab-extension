@@ -1,5 +1,5 @@
 const urlIcon = (url) => `https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${url}&size=128`
-const searchUrl = 'https://www.bing.com/?q='
+const searchUrl = 'https://www.duckduckgo.com/?q='
 
 const colorThief = new ColorThief();
 
@@ -16,34 +16,40 @@ browser.bookmarks.getTree(function(bookmarkTreeNodes) {
     try {
         const root = bookmarkTreeNodes[0]
         populateGroups(root)
-        groups = groups.filter(group => group.links.length > 0)
+        sanitizeGroups()
     } catch (error) {
         console.log(error)
     }
-
-    console.log(groups)
 
     loaded()
 });
 
 const populateGroups = (bookmarkNode) => {
+    // transform bookmarks into a flat array
     if (bookmarkNode.children) {
         bookmarkNode.children.forEach(child => {
-            if(child.url) {
-                const group = groups.find(group => group.title === bookmarkNode.title)
-                if (group) {
-                    const bookmark = {title: child.title, url: child.url}
-                    if (group.links.map(link => link.url).includes(bookmark.url)) return
-                    group.links.push(bookmark)
-                } else {
-                    console.log('no group')
-                }
-            } else {
-                groups.push({title: child.title, links: child.children})
+            if (child.children) {
+                groups.push({title: child.title, links: []})
+                groups = groups.filter((group, index, self) => self.findIndex(t => t.title === group.title) === index)
                 populateGroups(child)
+            } else {
+                const bookmark = {title: child.title, url: child.url, icon: child.iconUrl, id: child.id}
+                const group = groups.find(group => group.title === bookmarkNode.title)
+                if (group.links.map(link => link.url).includes(bookmark.url)) return
+                group.links.push(bookmark)
+                bookmarks.push(child)
             }
         })
     }
+}
+
+const sanitizeGroups = () => {
+    groups.forEach(group => {
+        group.links = group.links.filter(link => link.url)
+        group.links = group.links.sort((a, b) => a.title.localeCompare(b.title))
+    })
+    groups = groups.filter(group => group.links.length > 0)
+    groups = groups.sort((a, b) => a.title.localeCompare(b.title))
 }
 
 const loaded = () => {
@@ -85,7 +91,7 @@ const searchOnKeyPress = (event) => {
 
 const search = (query) => {
     const links = groups.reduce((acc, group) => {
-        const found = group.links.filter(link => link.title.toLowerCase().includes(query.toLowerCase()))
+        const found = group.links.filter(link => link.title.toLowerCase().includes(query.toLowerCase()) || link.url.toLowerCase().includes(query.toLowerCase()))
         return [...acc, ...found]
     }, [])
     clearChildren(resultsContainer)
