@@ -1,9 +1,12 @@
 const searchProvidersSelector = document.getElementById("search-providers")
 const overrideIconsSelector = document.getElementById("override-icons")
 const overrideIconFile = document.getElementById("override-icon-file")
+const overrideIconFileButton = document.getElementById("override-icon-file-button")
 const overrideIconUrl = document.getElementById("override-icon-url")
 const overrideIconButton = document.getElementById("override-icon-button")
 const overriddenIcons = document.getElementById("overridden-icons")
+const cachedImageSize = document.getElementById("cached-image-size")
+const clearCacheButton = document.getElementById("clear-cache-button")
 
 let searchProviders = []
 let overrideIcons = []
@@ -33,6 +36,13 @@ fetch('./search_providers.json').then(response => response.json()).then(sp => {
             })
 
             settings.overrideIcon = settings.overrideIcon.filter(oi => allBookmarks.map(b => b.url).includes(oi.url))
+            settings.overrideIcon = settings.overrideIcon.map(oi => {
+                const bookmark = allBookmarks.find(b => b.url === oi.url)
+                return {...oi, title: bookmark.title}
+            })
+
+            settings.cachedImages = settings.cachedImages.filter(ci => allBookmarks.map(b => b.icon).includes(ci.url))
+
             setSettings(settings)
 
             loaded()
@@ -47,6 +57,7 @@ const loaded = () => {
     populateOverrideIconsSelector()
 
     overrideIconsSelector.value = "0"
+    cachedImageSize.value = settings.cachedImageSize
 
     if (settings.searchProvider) {
         searchProvidersSelector.value = settings.searchProvider.name
@@ -55,12 +66,36 @@ const loaded = () => {
     searchProvidersSelector.addEventListener("change", onSearchProviderChange)
     overrideIconsSelector.addEventListener("change", onOverrideIconsChange)
     overrideIconButton.addEventListener("click", onOverrideIconButtonClick)
+    cachedImageSize.addEventListener("keyup", onCachedImageSizeKeyUp)
+    clearCacheButton.addEventListener("click", clearCache)
+    overrideIconFileButton.addEventListener("click", () => overrideIconFile.click())
 
-    renderOverriddenIcons()
+    renderLinks(settings.overrideIcon, overriddenIcons, false, deleteOverrideIcon)
+}
+
+const onCachedImageSizeKeyUp = (event) => {
+    const value = event.target.value
+    if (value === '') return
+    if (isNaN(value)) return
+
+    settings.cachedImageSize = parseInt(value)
+    setSettings(settings)
+}
+
+const clearCache = () => {
+    settings.cachedImages = []
+    setSettings(settings)
 }
 
 const populateSearchProvidersSelector = () => {
     clearChildren(searchProvidersSelector)
+
+    const defaultOption = document.createElement("option")
+    defaultOption.value = "0"
+    defaultOption.innerText = "Select Search Provider"
+    defaultOption.selected = true
+    defaultOption.disabled = true
+    searchProvidersSelector.appendChild(defaultOption)
 
     searchProviders.forEach(searchProvider => {
         const option = document.createElement("option")
@@ -80,6 +115,14 @@ const onSearchProviderChange = (event) => {
 
 const populateOverrideIconsSelector = () => {
     clearChildren(overrideIconsSelector)
+
+    const defaultOption = document.createElement("option")
+    defaultOption.value = "0"
+    defaultOption.innerText = "Select Bookmark"
+    defaultOption.selected = true
+    defaultOption.disabled = true
+    overrideIconsSelector.appendChild(defaultOption)
+
     bookmarks = bookmarks.sort((a, b) => a.title.localeCompare(b.title))
 
     bookmarks.forEach(bookmark => {
@@ -106,9 +149,9 @@ const onOverrideIconButtonClick = () => {
         bookmarks = bookmarks.filter(bookmark => bookmark.url !== selectedBookmark)
 
         setSettings(settings)
+        clearFields()
         populateOverrideIconsSelector()
         renderOverriddenIcons()
-        clearFields()
     } else {
         const reader = new FileReader()
         reader.readAsDataURL(image)
@@ -119,9 +162,9 @@ const onOverrideIconButtonClick = () => {
             bookmarks = bookmarks.filter(bookmark => bookmark.url !== selectedBookmark)
     
             setSettings(settings)
+            clearFields()
             populateOverrideIconsSelector()
             renderOverriddenIcons()
-            clearFields()
         }
     }
 }
@@ -132,28 +175,22 @@ const clearFields = () => {
     overrideIconsSelector.value = "0"
 }
 
-const renderOverriddenIcons = () => {
-    clearChildren(overriddenIcons)
-
-    settings.overrideIcon.forEach(overrideIcon => {
-        const li = document.createElement("li")
-        li.addEventListener("click", () => deleteOverrideIcon(overrideIcon))
-        const img = document.createElement("img")
-        img.src = overrideIcon.icon
-        li.appendChild(img)
-        const span = document.createElement("span")
-        span.innerText = getBookmarkTitleFromUrl(overrideIcon.url)
-        li.appendChild(span)
-        overriddenIcons.appendChild(li)
-    })
-}
-
-const deleteOverrideIcon = (overrideIcon) => {
-    settings.overrideIcon = settings.overrideIcon.filter(oi => oi.url !== overrideIcon.url)
-    bookmarks = [...bookmarks, allBookmarks.find(bookmark => bookmark.url === overrideIcon.url)]
+const deleteOverrideIcon = (url) => {
+    settings.overrideIcon = settings.overrideIcon.filter(oi => oi.url !== url)
+    bookmarks = [...bookmarks, allBookmarks.find(bookmark => bookmark.url === url)]
 
     setSettings(settings)
+    clearFields()
     populateOverrideIconsSelector()
     renderOverriddenIcons()
-    clearFields()
+}
+
+const renderOverriddenIcons = () => {
+    settings.overrideIcon = settings.overrideIcon.map(oi => {
+        const bookmark = allBookmarks.find(b => b.url === oi.url)
+        return {...oi, title: bookmark.title}
+    })
+    settings.overrideIcon = settings.overrideIcon.sort((a, b) => a.title.localeCompare(b.title))
+    renderLinks(settings.overrideIcon, overriddenIcons, false, deleteOverrideIcon)
+    getColors()
 }

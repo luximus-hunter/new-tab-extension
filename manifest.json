@@ -7,6 +7,7 @@
         "bookmarks",
         "activeTab",
         "storage",
+        "unlimitedStorage",
         "https://t0.gstatic.com/*"
     ],
     "chrome_url_overrides" : {

@@ -1,7 +1,3 @@
-let searchUrl = "https://duckduckgo.com/?q="
-
-const colorThief = new ColorThief();
-
 const searchInput = document.getElementById('search')
 const groupContainer = document.getElementById('groups')
 const resultsContainer = document.getElementById('results')
@@ -21,6 +17,7 @@ getSettings((s) => {
 
         allBookmarks = g.map(group => group.links).flat()
         settings.overrideIcon = settings.overrideIcon.filter(oi => allBookmarks.map(b => b.url).includes(oi.url))
+
         setSettings(settings)
 
         loaded()
@@ -69,58 +66,25 @@ const search = (query) => {
         const found = group.links.filter(link => link.title.toLowerCase().includes(query.toLowerCase()) || link.url.toLowerCase().includes(query.toLowerCase()))
         return [...acc, ...found]
     }, [])
+    links.sort((a, b) => a.title.localeCompare(b.title))
     clearChildren(resultsContainer)
-    renderLinks(links, resultsContainer)
-    getColors()
+    renderLinks(links, resultsContainer, true)
 }
 
 const renderGroups = (groups) => {
     clearChildren(groupContainer)
 
     groups.forEach(group => {
-        const title = document.createElement('h1')
+        const title = document.createElement('h2')
         title.innerText = group.title
 
         const container = document.createElement('div')
         container.className = 'links-container'
 
-        renderLinks(group.links, container)
+        renderLinks(group.links, container, true)
 
         groupContainer.appendChild(title)
         groupContainer.appendChild(container)
-    })
-    getColors()
-}
-
-const renderLinks = (links, container) => {
-    clearChildren(container)
-    links.forEach(link => {
-        const linkA = document.createElement('a')
-        linkA.className = 'link-card'
-        linkA.href = link.url
-
-        const linkIcon = document.createElement('img')
-        linkIcon.crossOrigin = 'Anonymous';
-        linkIcon.alt = link.title
-
-        let imageUrl = ''
-
-        if (settings.overrideIcon.map(oi => oi.url).includes(link.url)) {
-            const overrideIcon = settings.overrideIcon.find(oi => oi.url === link.url)
-            imageUrl = overrideIcon.icon
-        } else {
-            imageUrl = urlIcon(link.icon ? link.icon : link.url);
-        }
-
-        linkIcon.src = imageUrl
-
-        linkA.appendChild(linkIcon)
-
-        const linkSpan = document.createElement('span')
-        linkSpan.innerText = link.title
-        linkA.appendChild(linkSpan)
-
-        container.appendChild(linkA)
     })
 }
 
@@ -134,31 +98,3 @@ const goToFirstLink = () => {
 const getLinkCount = () => {
     return bookmarkContainer.querySelectorAll('a').length
 } 
-
-const getColors = () => {
-    document.querySelectorAll('img').forEach(img => {      
-        if (!img) return
-
-        if (colors.map(item => item.url).includes(img.src)) {
-            const color = colors.find(item => item.url === img.src)
-            setColors(img, color.color)
-        } else {
-            if (img.complete) {
-                let color = colorThief.getColor(img);
-                setColors(img, rgbToHex(color[0], color[1], color[2]))
-                colors.push({url: img.src, color: rgbToHex(color[0], color[1], color[2])})
-            } else {
-                img.addEventListener('load', function() {
-                    let color = colorThief.getColor(img);
-                    setColors(img, rgbToHex(color[0], color[1], color[2]))
-                    colors.push({url: img.src, color: rgbToHex(color[0], color[1], color[2])})
-                });
-            }
-        }
-    })
-}
-
-const setColors = (element, color) => {
-    element.parentNode.style.backgroundColor = color.toLowerCase()
-    element.parentNode.style.color = contrastingColor(color.replace('#', '')).toLowerCase()
-}
