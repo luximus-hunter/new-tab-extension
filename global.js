@@ -36,10 +36,6 @@ const populateGroups = (bookmarkNode) => {
 }
 
 const getBase64Image = (img) => {
-    console.log("getBase64Image")
-
-    console.log(img.src)
-
     if (!img) return ''
     if (img.src.includes('data:image')) return img.src
 
@@ -123,7 +119,6 @@ const getImageFromCache = (url) => {
 }
 
 const imageLoaded = (event) => {
-    console.log("imageLoaded")
     const img = event.target
     img.src = getBase64Image(img)
     let color = colorThief.getColor(img);
@@ -151,7 +146,6 @@ const getSettings = (callback) => {
 }
 
 const setSettings = (settings) => {
-    console.log(settings)
     browser.storage.local.set(settings)
 }
 

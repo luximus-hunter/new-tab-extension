@@ -21,5 +21,11 @@
             "id": "newtab@luximus.eu",
             "strict_min_version": "42.0"
         }
-    } 
+    },
+    "omnibox": {
+        "keyword": "b"
+    },
+    "background": {
+        "scripts": ["search.js"]
+      }
 }

@@ -51,8 +51,6 @@ fetch('./search_providers.json').then(response => response.json()).then(sp => {
 })
 
 const loaded = () => {
-    console.log(searchProviders, settings)
-
     populateSearchProvidersSelector()
     populateOverrideIconsSelector()
 
